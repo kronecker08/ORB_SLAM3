@@ -32,6 +32,8 @@ else()
 endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
+LIST(APPEND CMAKE_MODULE_PATH "/eigen-3.2.1/cmake")
+
 
 find_package(OpenCV 3)
 if(NOT OpenCV_FOUND)
