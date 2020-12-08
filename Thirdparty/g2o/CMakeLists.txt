@@ -35,7 +35,6 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${g2o_RUNTIME_OUTPUT_DIRECTORY})
 # Set search directory for looking for our custom CMake scripts to
 # look for SuiteSparse, QGLViewer, and Eigen3.
 LIST(APPEND CMAKE_MODULE_PATH ${g2o_SOURCE_DIR}/cmake_modules)
-LIST(APPEND CMAKE_MODULE_PATH "/eigen-3.2.1/cmake")
 
 # Detect OS and define macros appropriately
 IF(UNIX)

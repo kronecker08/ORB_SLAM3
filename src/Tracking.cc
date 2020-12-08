@@ -766,12 +766,14 @@ bool Tracking::ParseORBParamFile(cv::FileStorage &fSettings)
     }
 
     mpORBextractorLeft = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
-
+    mpORBextractorLeft_for_Mono = cv::ORB::create (nFeatures, fScaleFactor, nLevels, 20, 0, 2, cv::ORB::FAST_SCORE, 31, 20);
     if(mSensor==System::STEREO || mSensor==System::IMU_STEREO)
         mpORBextractorRight = new ORBextractor(nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpORBextractorRight_for_Mono = cv::ORB::create (nFeatures, fScaleFactor, nLevels, 20, 0, 2, cv::ORB::FAST_SCORE, 31, 20);
 
     if(mSensor==System::MONOCULAR || mSensor==System::IMU_MONOCULAR)
         mpIniORBextractor = new ORBextractor(5*nFeatures,fScaleFactor,nLevels,fIniThFAST,fMinThFAST);
+        mpIniORBextractor_for_Mono = cv::ORB::create (5*nFeatures, fScaleFactor, nLevels, 20, 0, 2, cv::ORB::FAST_SCORE, 31, 20);
 
     cout << endl << "ORB Extractor Parameters: " << endl;
     cout << "- Number of Features: " << nFeatures << endl;
@@ -1035,8 +1037,9 @@ cv::Mat Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const d
 }
 
 
-cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename)
-{
+cv::Mat Tracking::GrabImageMonocular(/*const cv::Mat &im, */const cv::Mat &descriptors, const std::vector<cv::KeyPoint> &mvKeys, const double &timestamp, string filename)
+{   
+    /*
     mImGray = im;
 
     if(mImGray.channels()==3)
@@ -1053,22 +1056,23 @@ cv::Mat Tracking::GrabImageMonocular(const cv::Mat &im, const double &timestamp,
         else
             cvtColor(mImGray,mImGray,CV_BGRA2GRAY);
     }
+    */
 
     if (mSensor == System::MONOCULAR)
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET ||(lastID - initID) < mMaxFrames)
-            mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+            mCurrentFrame = Frame(/*mImGray, */descriptors, mvKeys, timestamp,/*mpIniORBextractor_for_Mono, mpIniORBextractor, */mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
         else
-            mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
+            mCurrentFrame = Frame(/*mImGray,*/descriptors, mvKeys, timestamp,/*mpORBextractorLeft_for_Mono, mpORBextractorLeft, */mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth);
     }
     else if(mSensor == System::IMU_MONOCULAR)
     {
         if(mState==NOT_INITIALIZED || mState==NO_IMAGES_YET)
         {
-            mCurrentFrame = Frame(mImGray,timestamp,mpIniORBextractor,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+            mCurrentFrame = Frame(/*mImGray,*/descriptors, mvKeys, timestamp,/*mpIniORBextractor_for_Mono, mpIniORBextractor, */mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
         }
         else
-            mCurrentFrame = Frame(mImGray,timestamp,mpORBextractorLeft,mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
+            mCurrentFrame = Frame(/*mImGray,*/descriptors, mvKeys, timestamp,/*mpORBextractorLeft_for_Mono, mpIniORBextractor, */mpORBVocabulary,mpCamera,mDistCoef,mbf,mThDepth,&mLastFrame,*mpImuCalib);
     }
 
     if (mState==NO_IMAGES_YET)
@@ -1499,7 +1503,7 @@ void Tracking::Track()
             MonocularInitialization();
         }
 
-        mpFrameDrawer->Update(this);
+        //mpFrameDrawer->Update(this);
 
         if(mState!=OK) // If rightly initialized, mState=OK
         {
@@ -1785,7 +1789,7 @@ void Tracking::Track()
         }
 
         // Update drawer
-        mpFrameDrawer->Update(this);
+        //mpFrameDrawer->Update(this);
         if(!mCurrentFrame.mTcw.empty())
             mpMapDrawer->SetCurrentCameraPose(mCurrentFrame.mTcw);
 

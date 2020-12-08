@@ -14,6 +14,7 @@
 *
 * You should have received a copy of the GNU General Public License along with ORB-SLAM3.
 * If not, see <http://www.gnu.org/licenses/>.
+
 */
 
 
@@ -290,7 +291,7 @@ void Viewer::Run()
             mpMapDrawer->DrawMapPoints();
 
         pangolin::FinishFrame();
-
+        /*
         cv::Mat toShow;
         cv::Mat im = mpFrameDrawer->DrawFrame(true);
 
@@ -304,7 +305,7 @@ void Viewer::Run()
 
         cv::imshow("ORB-SLAM3: Current Frame",toShow);
         cv::waitKey(mT);
-
+        */
         if(menuReset)
         {
             menuShowGraph = true;

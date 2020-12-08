@@ -61,7 +61,7 @@ ${PROJECT_SOURCE_DIR}/../../../lib/libORB_SLAM3.so
 
 # Node for monocular camera
 rosbuild_add_executable(Mono
-src/ros_mono.cc
+src/ros_mono.cpp
 )
 
 target_link_libraries(Mono
@@ -69,15 +69,15 @@ ${LIBS}
 )
 
 # Node for monocular camera (Augmented Reality Demo)
-rosbuild_add_executable(MonoAR
-src/AR/ros_mono_ar.cc
-src/AR/ViewerAR.h
-src/AR/ViewerAR.cc
-)
+#rosbuild_add_executable(MonoAR
+#src/AR/ros_mono_ar.cc
+#src/AR/ViewerAR.h
+#src/AR/ViewerAR.cc
+#)
 
-target_link_libraries(MonoAR
-${LIBS}
-)
+#target_link_libraries(MonoAR
+#${LIBS}
+#)
 
 # Node for stereo camera
 rosbuild_add_executable(Stereo
@@ -98,13 +98,13 @@ ${LIBS}
 )
 
 # Node for monocular-inertial camera
-rosbuild_add_executable(Mono_Inertial
-src/ros_mono_inertial.cc
-)
+#rosbuild_add_executable(Mono_Inertial
+#src/ros_mono_inertial.cc
+#)
 
-target_link_libraries(Mono_Inertial
-${LIBS}
-)
+#target_link_libraries(Mono_Inertial
+#${LIBS}
+#)
 
 # Node for stereo-inertial camera
 rosbuild_add_executable(Stereo_Inertial

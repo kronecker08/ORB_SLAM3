@@ -195,6 +195,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mptLoopClosing = new thread(&ORB_SLAM3::LoopClosing::Run, mpLoopCloser);
 
     //Initialize the Viewer thread and launch
+    /*
     if(bUseViewer)
     {
         mpViewer = new Viewer(this, mpFrameDrawer,mpMapDrawer,mpTracker,strSettingsFile);
@@ -203,7 +204,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         mpLoopCloser->mpViewer = mpViewer;
         mpViewer->both = mpFrameDrawer->both;
     }
-
+    */
     //Set pointers between threads
     mpTracker->SetLocalMapper(mpLocalMapper);
     mpTracker->SetLoopClosing(mpLoopCloser);
@@ -343,14 +344,13 @@ cv::Mat System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const doub
     return Tcw;
 }
 
-cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
+cv::Mat System::TrackMonocular(/*const cv::Mat &im, */const cv::Mat &descriptors, const cv::Mat &matKeys,/*const std::vector<cv::KeyPoint> &mvKeys,*/ const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
 {
     if(mSensor!=MONOCULAR && mSensor!=IMU_MONOCULAR)
     {
         cerr << "ERROR: you called TrackMonocular but input sensor was not set to Monocular nor Monocular-Inertial." << endl;
         exit(-1);
     }
-
     // Check mode change
     {
         unique_lock<mutex> lock(mMutexMode);
@@ -395,8 +395,10 @@ cv::Mat System::TrackMonocular(const cv::Mat &im, const double &timestamp, const
     if (mSensor == System::IMU_MONOCULAR)
         for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
             mpTracker->GrabImuData(vImuMeas[i_imu]);
-
-    cv::Mat Tcw = mpTracker->GrabImageMonocular(im,timestamp,filename);
+    std::vector<cv::Point2f> key_2f_vec = matKeys;
+    std::vector<cv::KeyPoint> mvKeys;
+    cv::KeyPoint::convert(key_2f_vec, mvKeys);
+    cv::Mat Tcw = mpTracker->GrabImageMonocular(/*im, */descriptors, mvKeys, timestamp,filename);
 
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;

@@ -49,7 +49,7 @@ Frame::Frame(): mpcpi(NULL), mpImuPreintegrated(NULL), mpPrevFrame(NULL), mpImuP
 
 //Copy Constructor
 Frame::Frame(const Frame &frame)
-    :mpcpi(frame.mpcpi),mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight),
+    :mpcpi(frame.mpcpi),mpORBvocabulary(frame.mpORBvocabulary), mpORBextractorLeft(frame.mpORBextractorLeft), mpORBextractorRight(frame.mpORBextractorRight), mpORBextractorLeft_for_Mono(frame.mpORBextractorLeft_for_Mono),
      mTimeStamp(frame.mTimeStamp), mK(frame.mK.clone()), mDistCoef(frame.mDistCoef.clone()),
      mbf(frame.mbf), mb(frame.mb), mThDepth(frame.mThDepth), N(frame.N), mvKeys(frame.mvKeys),
      mvKeysRight(frame.mvKeysRight), mvKeysUn(frame.mvKeysUn), mvuRight(frame.mvuRight),
@@ -88,7 +88,7 @@ Frame::Frame(const Frame &frame)
 Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, Frame* pPrevF, const IMU::Calib &ImuCalib)
     :mpcpi(NULL), mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false),
-     mpCamera(pCamera) ,mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)
+     mpCamera(pCamera) ,mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)/*,mpORBextractorLeft_for_Mono(nullptr)*/
 {
     // Frame ID
     mnId=nNextId++;
@@ -192,7 +192,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
      mTimeStamp(timeStamp), mK(K.clone()),mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
      mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF), mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false),
-     mpCamera(pCamera),mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)
+     mpCamera(pCamera),mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)/*,mpORBextractorLeft_for_Mono(nullptr)*/
 {
     // Frame ID
     mnId=nNextId++;
@@ -233,11 +233,13 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     mmMatchedInImage.clear();
 
     mvbOutlier = vector<bool>(N,false);
+    std::cout<<"hi"<<std::endl;
 
     // This is done only for the first Frame (or after a change in the calibration)
     if(mbInitialComputations)
     {
         ComputeImageBounds(imGray);
+
 
         mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
         mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
@@ -271,24 +273,95 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
 }
 
 
-Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extractor,ORBVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF, const IMU::Calib &ImuCalib)
-    :mpcpi(NULL),mpORBvocabulary(voc),mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),
+Frame::Frame(/*const cv::Mat &imGray, */const cv::Mat &descriptors, const std::vector<cv::KeyPoint> &mvKeys, const double &timeStamp,/* cv::Ptr<cv::ORB> extractor_for_Mono, ORBextractor* extractor,*/ORBVocabulary* voc, GeometricCamera* pCamera, cv::Mat &distCoef, const float &bf, const float &thDepth, Frame* pPrevF, const IMU::Calib &ImuCalib)
+    :mpcpi(NULL),mpORBvocabulary(voc),/*mpORBextractorLeft(extractor),mpORBextractorRight(static_cast<ORBextractor*>(NULL)),*/
      mTimeStamp(timeStamp), mK(static_cast<Pinhole*>(pCamera)->toK()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-     mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera),
-     mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0)
+     mImuCalib(ImuCalib), mpImuPreintegrated(NULL),mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera), /*mpORBextractorLeft_for_Mono(extractor_for_Mono),*/
+     mpCamera2(nullptr), mTimeStereoMatch(0), mTimeORB_Ext(0), mDescriptors(descriptors), mvKeys(mvKeys)
 {
     // Frame ID
     mnId=nNextId++;
-
+    /*
     // Scale Level Info
     mnScaleLevels = mpORBextractorLeft->GetLevels();
+    std::cout<<"mnScaleLevels "<<mnScaleLevels<<endl;
+    mnScaleLevels = 1;
     mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
-    mfLogScaleFactor = log(mfScaleFactor);
-    mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
-    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
-    mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
-    mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+    std::cout<<"mfScaleFactor "<<mfScaleFactor<<endl;
+    mfScaleFactor = 1.2;
 
+    mfLogScaleFactor = log(mfScaleFactor);
+    std::cout<<"mfLogScaleFactor "<<mfLogScaleFactor<<endl;
+    mfLogScaleFactor = 0.182322
+
+    mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
+    mvScaleFactors = {1, 1.2, 1.44, 1.728, 2.0736, 2.48832, 2.98598};
+    for (auto i : mvScaleFactors)
+    {
+        std::cout<<i<<std::endl;
+    }
+    //std::cout<<"mvScaleFactors "<<mvScaleFactors<<endl;
+
+    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
+    //std::cout<<"mvInvScaleFactors "<<mvInvScaleFactors<<endl;
+
+    mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
+    //std::cout<<"mvLevelSigma2 "<<mvLevelSigma2<<endl;
+
+    mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+    //std::cout<<"mvInvLevelSigma2 "<<mvInvLevelSigma2 <<endl;
+    */
+    /*
+    mnScaleLevels = mpORBextractorLeft->GetLevels();
+    std::cout<<"mnScaleLevels "<<mnScaleLevels<<endl;
+    mfScaleFactor = mpORBextractorLeft->GetScaleFactor();
+    std::cout<<"mfScaleFactor "<<mfScaleFactor<<endl;
+
+    mfLogScaleFactor = log(mfScaleFactor);
+    std::cout<<"mfLogScaleFactor "<<mfLogScaleFactor<<endl;
+
+    mvScaleFactors = mpORBextractorLeft->GetScaleFactors();
+    std::cout<<"mvScaleFactors "<<endl;
+    for (auto i : mvScaleFactors)
+    {
+        std::cout<<i<<std::endl;
+    }
+    
+
+    mvInvScaleFactors = mpORBextractorLeft->GetInverseScaleFactors();
+    //std::cout<<"mvInvScaleFactors "<<mvInvScaleFactors<<endl;
+    std::cout<<"mvInvScaleFactors "<<endl;
+    for (auto i : mvInvScaleFactors)
+    {
+        std::cout<<i<<std::endl;
+    }
+    mvLevelSigma2 = mpORBextractorLeft->GetScaleSigmaSquares();
+    std::cout<<"mvLevelSigma2 "<<endl;
+    for (auto i : mvLevelSigma2)
+    {
+        std::cout<<i<<std::endl;
+    }
+    
+    //std::cout<<"mvLevelSigma2 "<<mvLevelSigma2<<endl;
+
+    mvInvLevelSigma2 = mpORBextractorLeft->GetInverseScaleSigmaSquares();
+    //std::cout<<"mvInvLevelSigma2 "<<mvInvLevelSigma2 <<endl;
+    std::cout<<"mvInvLevelSigma2 "<<endl;
+    for (auto i : mvInvLevelSigma2)
+    {
+        std::cout<<i<<std::endl;
+    }
+    */
+    mnScaleLevels =  8;
+    mfScaleFactor = 1.2;
+    mfLogScaleFactor = 0.182322;
+    mvScaleFactors = {1, 1.2, 1.44, 1.728, 2.0736, 2.48832, 2.98598, 3.58138};
+    mvInvScaleFactors = {1, 0.833333, 0.694444, 0.578704, 0.482253, 0.401878, 0.334898, 0.279082};
+    mvLevelSigma2 = {1, 1.44,2.0736, 2.98598, 4.29982,6.19174, 8.9161, 12.8392};
+    mvInvLevelSigma2 = {1, 0.694444,0.482253,0.334898, 0.232568,0.161506, 0.112157, 0.0778865};
+
+
+/*
     // ORB extraction
 #ifdef SAVE_TIMES
     std::chrono::steady_clock::time_point time_StartExtORB = std::chrono::steady_clock::now();
@@ -300,7 +373,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
 #endif
 
-
+*/
     N = mvKeys.size();
     if(mvKeys.empty())
         return;
@@ -322,7 +395,15 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     // This is done only for the first Frame (or after a change in the calibration)
     if(mbInitialComputations)
     {
-        ComputeImageBounds(imGray);
+        //ComputeImageBounds(imGray);
+        //std::cout<<"mnMaxX "<< mnMaxX<<std::endl;
+        //std::cout<<"mnMaxY "<< mnMaxY<<std::endl;
+        //std::cout<<"mnMinX "<< mnMinX<<std::endl;
+        //std::cout<<"mnMinY "<< mnMinY<<std::endl;
+        mnMaxX = 895.507;
+		mnMaxY = 565.553;
+		mnMinX = -135.796;
+		mnMinY = -92.875;
 
         mfGridElementWidthInv=static_cast<float>(FRAME_GRID_COLS)/static_cast<float>(mnMaxX-mnMinX);
         mfGridElementHeightInv=static_cast<float>(FRAME_GRID_ROWS)/static_cast<float>(mnMaxY-mnMinY);
@@ -405,7 +486,8 @@ void Frame::ExtractORB(int flag, const cv::Mat &im, const int x0, const int x1)
 {
     vector<int> vLapping = {x0,x1};
     if(flag==0)
-        monoLeft = (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);
+        //monoLeft = (*mpORBextractorLeft)(im,cv::Mat(),mvKeys,mDescriptors,vLapping);
+        mpORBextractorLeft_for_Mono->detectAndCompute(im,cv::Mat(),mvKeys,mDescriptors);
     else
         monoRight = (*mpORBextractorRight)(im,cv::Mat(),mvKeysRight,mDescriptorsRight,vLapping);
 }
@@ -1027,7 +1109,7 @@ void Frame::setIntegrated()
 
 Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeStamp, ORBextractor* extractorLeft, ORBextractor* extractorRight, ORBVocabulary* voc, cv::Mat &K, cv::Mat &distCoef, const float &bf, const float &thDepth, GeometricCamera* pCamera, GeometricCamera* pCamera2, cv::Mat& Tlr,Frame* pPrevF, const IMU::Calib &ImuCalib)
         :mpcpi(NULL), mpORBvocabulary(voc),mpORBextractorLeft(extractorLeft),mpORBextractorRight(extractorRight), mTimeStamp(timeStamp), mK(K.clone()), mDistCoef(distCoef.clone()), mbf(bf), mThDepth(thDepth),
-         mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera), mpCamera2(pCamera2), mTlr(Tlr)
+         mImuCalib(ImuCalib), mpImuPreintegrated(NULL), mpPrevFrame(pPrevF),mpImuPreintegratedFrame(NULL), mpReferenceKF(static_cast<KeyFrame*>(NULL)), mbImuPreintegrated(false), mpCamera(pCamera), mpCamera2(pCamera2), mTlr(Tlr)/*, mpORBextractorLeft_for_Mono(NULL)*/
 {
     std::chrono::steady_clock::time_point t0 = std::chrono::steady_clock::now();
     imgLeft = imLeft.clone();

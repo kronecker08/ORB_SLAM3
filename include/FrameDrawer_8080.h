@@ -14,7 +14,6 @@
 *
 * You should have received a copy of the GNU General Public License along with ORB-SLAM3.
 * If not, see <http://www.gnu.org/licenses/>.
-
 */
 
 
@@ -42,18 +41,18 @@ class FrameDrawer
 {
 public:
     FrameDrawer(Atlas* pAtlas);
-    /*
+
     // Update info from the last processed frame.
     void Update(Tracking *pTracker);
 
     // Draw last processed frame.
     cv::Mat DrawFrame(bool bOldFeatures=true);
     cv::Mat DrawRightFrame();
-     */
+
     bool both;
-   
+
 protected:
-    /*
+
     void DrawTextInfo(cv::Mat &im, int nState, cv::Mat &imText);
 
     // Info of the frame to be drawn
@@ -66,9 +65,9 @@ protected:
     vector<cv::KeyPoint> mvIniKeys;
     vector<int> mvIniMatches;
     int mState;
-    */
+
     Atlas* mpAtlas;
-    /*
+
     std::mutex mMutex;
     vector<pair<cv::Point2f, cv::Point2f> > mvTracks;
 
@@ -81,7 +80,7 @@ protected:
 
     map<long unsigned int, cv::Point2f> mmProjectPoints;
     map<long unsigned int, cv::Point2f> mmMatchedInImage;
-    */
+
 };
 
 } //namespace ORB_SLAM

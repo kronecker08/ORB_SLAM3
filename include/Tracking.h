@@ -70,7 +70,7 @@ public:
     // Preprocess the input and call Track(). Extract features and performs stereo matching.
     cv::Mat GrabImageStereo(const cv::Mat &imRectLeft,const cv::Mat &imRectRight, const double &timestamp, string filename);
     cv::Mat GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp, string filename);
-    cv::Mat GrabImageMonocular(const cv::Mat &im, const double &timestamp, string filename);
+    cv::Mat GrabImageMonocular(/*const cv::Mat &im, */const cv::Mat &descriptors, const std::vector<cv::KeyPoint> &mvKeys, const double &timestamp, string filename);
     // cv::Mat GrabImageImuMonocular(const cv::Mat &im, const double &timestamp);
 
     void GrabImuData(const IMU::Point &imuMeasurement);
@@ -237,9 +237,13 @@ protected:
     LoopClosing* mpLoopClosing;
 
     //ORB
+    
     ORBextractor* mpORBextractorLeft, *mpORBextractorRight;
     ORBextractor* mpIniORBextractor;
-
+    
+    cv::Ptr<cv::ORB> mpORBextractorLeft_for_Mono, mpORBextractorRight_for_Mono;
+    cv::Ptr<cv::ORB> mpIniORBextractor_for_Mono;
+    
     //BoW
     ORBVocabulary* mpORBVocabulary;
     KeyFrameDatabase* mpKeyFrameDB;
